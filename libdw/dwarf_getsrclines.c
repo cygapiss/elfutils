@@ -246,6 +246,15 @@ read_line_header (Dwarf *dbg, unsigned address_size,
     }
   lh->header_start = linep;
 
+  /* The header length is the number of bytes from here to the start of
+     the line number program, so it must stay within the unit (and thus
+     the section).  Without this check a bogus header_length makes
+     read_srcfiles/read_srclines compute an out-of-bounds end pointer
+     (header_start + header_length) and read past the section while
+     parsing the directory and file tables.  */
+  if (unlikely (lh->header_length > (size_t) (lineendp - linep)))
+    goto invalid_data;
+
   /* Next the minimum instruction length.  */
   if (unlikely ((size_t) (lineendp - linep) < 1))
     goto invalid_data;
